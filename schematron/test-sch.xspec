@@ -1,0 +1,8 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:description xmlns:x="http://www.jenitennison.com/xslt/xspec" schematron="test.sch">
+    <x:scenario label="Schematron">
+        <x:context><test><child/></test></x:context>
+        <x:expect-not-assert location="/test"/>
+        <x:expect-assert location="/test/child"/>
+    </x:scenario>
+</x:description>

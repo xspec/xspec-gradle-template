@@ -1,0 +1,139 @@
+plugins {
+  id "java"
+  id "de.undercouch.download" version "4.0.4"
+}
+
+import org.gradle.internal.os.OperatingSystem
+
+repositories {
+  jcenter()
+}
+
+def xspecVersion = '1.6.0'
+def xspecCatalog = "${projectDir.toURI()}src/schemas/catalog.xml"
+
+dependencies {
+  runtimeOnly "net.sf.saxon:Saxon-HE:9.9.1-7"
+  runtimeOnly "xml-resolver:xml-resolver:1.2"
+}
+
+defaultTasks 'test'
+
+
+
+// ============================================================
+// XSpec
+// ============================================================
+// inspired by https://github.com/ndw/xsltexplorer
+// Detect and run XSpec test scenarios as part of tasks "test" and "testXSpec"
+// Detection is based on file name ending with .xspec
+// File name ending with sch.xspec will be run as XSpec Schematron test
+// File name ending with xq.xspec will be run as XSpec XQuery test
+// Otherwise, file name ending with .xspec will be run as XSpec XSLT test
+
+test.dependsOn "testXSpec"
+
+task testXSpec {}
+
+// download a specific version of XSpec
+task downloadXSpec(type: Download) {
+  src "https://github.com/xspec/xspec/archive/v${xspecVersion}.zip"
+  dest file("${buildDir}/xspec-${xspecVersion}.zip")
+  doFirst {
+    mkdir(buildDir)
+  }
+  onlyIf {
+    !file("${buildDir}/xspec-${xspecVersion}.zip").exists()
+  }
+}
+
+// unpack the XSpec distribution after downloading
+task setupXSpec(type: Copy, dependsOn: ['downloadXSpec']) {
+  def zipFile = file("${buildDir}/xspec-${xspecVersion}.zip")
+  def outputDir = buildDir
+  from zipTree(zipFile)
+  into outputDir
+  onlyIf {
+    !file("${buildDir}/xspec-${xspecVersion}/README.md").exists()
+  }
+}
+
+// create a file path to the XSpec command
+def xspecCmd = (OperatingSystem.current().isWindows()) ? 
+  "${buildDir}\\xspec-${xspecVersion}\\bin\\xspec.bat" : 
+  "${buildDir}/xspec-${xspecVersion}/bin/xspec.sh"
+
+// export the Gradle project's runtime classpath so that XSpec can use the same classpath
+def EXCP=""
+configurations.runtimeClasspath.each { it ->
+  EXCP += ("".equals(EXCP)) ? it : (OperatingSystem.current().isWindows()) ? ";" + it : ":" + it
+}
+
+// configure environment variables for XSPec
+task configureEnvironment() {
+  def envVars = [:]
+  envVars['SAXON_CP'] = EXCP
+  envVars['XML_CATALOG'] = xspecCatalog
+  // envVars['TEST_DIR'] = buildDir
+  tasks.withType(Exec) {
+    environment << envVars
+  }
+  // doLast { println envVars }
+}
+
+// find .xspec files and dynamically generate tasks
+fileTree(
+  dir: projectDir, 
+  include: ["**/*.xspec"], 
+  exclude: [buildDir.getName()]
+).each { xspec -> 
+  def base = xspec.toString().replace("\\", "/")
+  def pos = projectDir.toString().length()
+  if (pos > 0) {
+    base = base.substring(pos + 1)
+  }
+  def taskname = base.replaceAll('[/\\\\:<>"?*|]', "_")
+  def xspecType = (base.matches('.+sch\\.xspec')) ? '-s' : (base.matches('.+xq\\.xspec')) ? '-q' : '-t'
+  // first task runs XSpec using the .xspec file
+  Task t1 = task "${taskname}_run" (type: Exec) {
+    doFirst { println "xspec ${xspecType} ${base}" }
+    dependsOn "setupXSpec", "configureEnvironment"
+    errorOutput = new ByteArrayOutputStream()
+    commandLine xspecCmd, xspecType, xspec.toString()
+    ext.output = {
+      return errorOutput.toString()
+    }
+    doLast {
+      println errorOutput.toString()
+    }
+  }
+  // second task examines the output of the first task
+  Task t2 = task "${taskname}" {
+    dependsOn "${taskname}_run"
+    doLast {
+      Task t = tasks.findByName("${taskname}_run")
+      def fail = false
+      t.output().split("\n").each { line ->
+        fail = fail || line.trim().equals("FAILED")
+      }
+      if (fail) {
+        throw new GradleException("XSpec did not pass")
+      }
+    }
+  }
+  // append the new task to run based on task testXSpec
+  Task t3 = tasks.findByName("testXSpec")
+  t3.dependsOn "${taskname}"
+}
+
+task cleanXSpec(type: Delete) {
+    delete fileTree(
+        dir: projectDir, 
+        include: "**/xspec/*"
+    )
+}
+clean.dependsOn "cleanXSpec"
+
+// ============================================================
+// End XSpec
+// ============================================================

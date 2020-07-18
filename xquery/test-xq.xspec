@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<x:description xmlns:x="http://www.jenitennison.com/xslt/xspec" query-at="test.xqm" query="test" xmlns:t="test">
+    <x:scenario label="test">
+        <x:call function="t:test"/>
+        <x:expect label="xquery" select="'test'"/>
+    </x:scenario>
+</x:description>
