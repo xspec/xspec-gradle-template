@@ -1,0 +1,12 @@
+image: openjdk:8
+
+variables:
+  GRADLE_OPTS: "-Dorg.gradle.daemon=false"
+
+before_script:
+  - export GRADLE_USER_HOME=`pwd`/.gradle
+
+test:
+  stage: test
+  script:
+    - ./gradlew test
