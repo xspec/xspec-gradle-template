@@ -20,12 +20,12 @@ XSpec: add your own XSpec files.
 
 To run all XSpec tests before committing changes to git run gradle tests.
 
-On Windows:
-
-    .\gradlew.bat clean test
-
-On Linux:
+On Windows, double click on `gradlew.bat` or at the command line run:
 
     .\gradlew clean test
 
-When you push changes to GitLab the XSpec tests will be run automatically.
+On Linux:
+
+    ./gradlew clean test
+
+When you push changes to the repository on GitLab, the XSpec tests will be run automatically and the status will be displayed in the project on GitLab.
