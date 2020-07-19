@@ -12,9 +12,13 @@ repositories {
 def xspecVersion = '1.6.0'
 def xspecCatalog = "${projectDir.toURI()}src/schemas/catalog.xml"
 
+configurations {
+    xspec
+}
+
 dependencies {
-  runtimeOnly "net.sf.saxon:Saxon-HE:9.9.1-7"
-  runtimeOnly "xml-resolver:xml-resolver:1.2"
+  xspec "net.sf.saxon:Saxon-HE:9.9.1-7"
+  xspec "xml-resolver:xml-resolver:1.2"
 }
 
 defaultTasks 'test'
@@ -65,7 +69,7 @@ def xspecCmd = (OperatingSystem.current().isWindows()) ?
 
 // export the Gradle project's runtime classpath so that XSpec can use the same classpath
 def EXCP=""
-configurations.runtimeClasspath.each { it ->
+configurations.xspec.each { it ->
   EXCP += ("".equals(EXCP)) ? it : (OperatingSystem.current().isWindows()) ? ";" + it : ":" + it
 }
 
