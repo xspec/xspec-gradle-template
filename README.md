@@ -47,7 +47,7 @@ If your project uses an XML Catalog for resolving dependencies to local copies o
 
 To run all XSpec tests before committing changes to git run gradle tests.
 
-On Windows:
+On Windows, double click on `gradlew.bat` or at the command line run:
 
     .\gradlew.bat testXSpec
 
