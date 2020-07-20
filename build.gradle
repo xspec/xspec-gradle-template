@@ -10,7 +10,7 @@ repositories {
 }
 
 def xspecVersion = '1.6.0'
-def xspecCatalog = "${projectDir.toURI()}src/schemas/catalog.xml"
+def xspecCatalog = "" // "${projectDir.toURI()}src/schemas/catalog.xml"
 
 configurations {
     xspec
@@ -21,7 +21,7 @@ dependencies {
   xspec "xml-resolver:xml-resolver:1.2"
 }
 
-defaultTasks 'test'
+defaultTasks "testXSpec"
 
 
 
@@ -34,10 +34,13 @@ defaultTasks 'test'
 // File name ending with sch.xspec will be run as XSpec Schematron test
 // File name ending with xq.xspec will be run as XSpec XQuery test
 // Otherwise, file name ending with .xspec will be run as XSpec XSLT test
-
-test.dependsOn "testXSpec"
+// The cleanup task "cleanXSpec" deletes files that are created by XSpec.
 
 task testXSpec {}
+
+test.dependsOn "testXSpec"
+clean.dependsOn "cleanXSpec"
+testXSpec.dependsOn "cleanXSpec"
 
 // download a specific version of XSpec
 task downloadXSpec(type: Download) {
@@ -133,10 +136,13 @@ fileTree(
 task cleanXSpec(type: Delete) {
     delete fileTree(
         dir: projectDir, 
-        include: "**/xspec/*"
+        include: [
+          "**/xspec/*",
+          "**/*-result.html",
+          "**/*-result.xml"
+        ]
     )
 }
-clean.dependsOn "cleanXSpec"
 
 // ============================================================
 // End XSpec
