@@ -1,0 +1,3 @@
+<!ELEMENT test (#PCDATA) >
+
+<!ENTITY peace "&#x262E;">

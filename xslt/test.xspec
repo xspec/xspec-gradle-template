@@ -5,5 +5,10 @@
         <x:context><test/></x:context>
         <x:expect label="shallow copy"><test/></x:expect>
     </x:scenario>
-    
+
+    <x:scenario label="XML Catalog">
+        <x:context href="../catalog/test.xml" select="*"/>
+        <x:expect label="shallow copy"><test>Peace &#x262E;</test></x:expect>
+    </x:scenario>
+
 </x:description>

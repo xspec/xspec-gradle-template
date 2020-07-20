@@ -10,7 +10,7 @@ repositories {
 }
 
 def xspecVersion = '1.6.0'
-def xspecCatalog = "" // "${projectDir.toURI()}src/schemas/catalog.xml"
+def xspecCatalog = "${projectDir.toURI()}catalog/catalog.xml"
 
 configurations {
     xspec
