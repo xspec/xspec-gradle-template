@@ -106,6 +106,7 @@ fileTree(
     doFirst { println "xspec ${xspecType} ${base}" }
     dependsOn "setupXSpec", "configureEnvironment"
     errorOutput = new ByteArrayOutputStream()
+    ignoreExitValue = true
     commandLine xspecCmd, xspecType, xspec.toString()
     ext.output = {
       return errorOutput.toString()
@@ -121,7 +122,7 @@ fileTree(
       Task t = tasks.findByName("${taskname}_run")
       def fail = false
       t.output().split("\n").each { line ->
-        fail = fail || line.trim().equals("FAILED")
+        fail = fail || line.trim().equals("FAILED") || line.contains("Error running the test suite")
       }
       if (fail) {
         throw new GradleException("XSpec did not pass")
