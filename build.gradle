@@ -13,16 +13,32 @@ def xspecVersion = '1.6.0'
 def xspecCatalog = "${projectDir.toURI()}catalog/catalog.xml"
 
 configurations {
-    xspec
+  xspec
+  schxslt.extendsFrom xspec
 }
 
 dependencies {
   xspec "net.sf.saxon:Saxon-HE:9.9.1-7"
   xspec "xml-resolver:xml-resolver:1.2"
+  schxslt "name.dmaus.schxslt:ant:1.6.2"
 }
 
 defaultTasks "testXSpec"
 
+
+// Validate an XML using a Schematron
+task validateSch {
+  doLast {
+    def antClassLoader = org.apache.tools.ant.Project.class.classLoader
+    configurations.schxslt.each { File f ->
+        antClassLoader.addURL(f.toURI().toURL())
+    }
+    System.setProperty("javax.xml.transform.TransformerFactory", "net.sf.saxon.TransformerFactoryImpl")
+    ant.taskdef(name: "schematron", classname: "name.dmaus.schxslt.ant.Task")
+    ant.schematron(file: "file.xml", schema: "file.sch") {
+    }
+  }
+}
 
 
 // ============================================================
