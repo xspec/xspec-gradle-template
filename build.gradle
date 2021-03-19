@@ -26,6 +26,13 @@ dependencies {
 defaultTasks "testXSpec"
 
 
+// Validate an XML using an XML Schema
+task validateXsd {
+  doLast {
+    ant.schemavalidate(file: 'file.xml')
+  }
+}
+
 // Validate an XML using a Schematron
 task validateSch {
   doLast {
