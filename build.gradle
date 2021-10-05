@@ -6,7 +6,7 @@ plugins {
 import org.gradle.internal.os.OperatingSystem
 
 repositories {
-  jcenter()
+  mavenCentral()
 }
 
 def xspecVersion = '1.6.0'
