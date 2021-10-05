@@ -9,7 +9,7 @@ repositories {
   mavenCentral()
 }
 
-def xspecVersion = '1.6.0'
+def xspecVersion = '2.2.4'
 def xspecCatalog = "${projectDir.toURI()}catalog/catalog.xml"
 
 configurations {
