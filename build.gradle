@@ -145,10 +145,10 @@ fileTree(
       Task t = tasks.findByName("${taskname}_run")
       def fail = false
       t.output().split("\n").each { line ->
-        fail = fail || line.trim().equals("FAILED") || line.contains("Error running the test suite")
+        fail = fail || line.trim().equals("FAILED") || line.startsWith("*** Error") || line.startsWith("*** Found")
       }
       if (fail) {
-        throw new GradleException("XSpec did not pass")
+        throw new GradleException("XSpec did not pass ${base}")
       }
     }
   }
