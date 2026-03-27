@@ -9,7 +9,9 @@ repositories {
   mavenCentral()
 }
 
-def xspecVersion = '2.2.4'
+def xspecVersion = '3.4.3'
+def saxonVersion = '12.9'
+def resolverVersion = "5.3.3"
 def xspecCatalog = "${projectDir.toURI()}catalog/catalog.xml"
 
 configurations {
@@ -18,8 +20,8 @@ configurations {
 }
 
 dependencies {
-  xspec "net.sf.saxon:Saxon-HE:9.9.1-7"
-  xspec "xml-resolver:xml-resolver:1.2"
+  xspec "net.sf.saxon:Saxon-HE:${saxonVersion}"
+  xspec "org.xmlresolver:xmlresolver:${resolverVersion}"
   schxslt "name.dmaus.schxslt:ant:1.6.2"
 }
 
