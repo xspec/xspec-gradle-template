@@ -33,7 +33,7 @@ jobs:
 
         - name: Run XSpec tests
           id: xspec-tests
-          if: !cancelled()
+          if: "!cancelled()"
           run: |
             ./gradlew xspec_test
 
