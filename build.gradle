@@ -187,6 +187,7 @@ fileTree(
   Task t1 = task "${taskname}_run" (type: Exec) {
     doFirst { println "xspec ${xspec_type} ${base}" }
     dependsOn "xspec_setup", "xspec_configure_environment"
+    mustRunAfter "xspec_clean"
     errorOutput = new ByteArrayOutputStream()
     ignoreExitValue = true
     commandLine xspec_cmd, "-j", xspec_type, xspec.toString()
