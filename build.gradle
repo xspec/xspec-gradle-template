@@ -32,7 +32,7 @@ defaultTasks "xspec_test"
 // There are different ways to specify that XML Catalogs should
 // be used and where they are located.
 
-def xmlCatalog = "${projectDir.toURI()}catalog/catalog.xml" // XML Catalog for XSpec
+def xmlCatalog = "${projectDir.toURI()}src/examples/catalog/catalog.xml" // XML Catalog for XSpec
 
 // System.setProperty("javax.xml.useCatalog","true") // XML Catalog for Java versions 11+
 // System.setProperty("javax.xml.catalog.resolve", "continue") // XML Catalog for Java versions 11+
@@ -91,8 +91,7 @@ task validateSch {
 // Folder containing XSpec test scenarios. 
 // The "xspec_test" task will look for .xspec files in this folder and its subfolders. 
 // The "xspec_clean" task will delete files created by XSpec in this folder and its subfolders.
-// def xspec_tests_dir = "${projectDir}/src"
-def xspec_tests_dir = "${projectDir}"
+def xspec_tests_dir = "${projectDir}/src"
 
 // collect failures across all xspec tests
 def xspec_failures = []
