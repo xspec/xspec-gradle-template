@@ -12,7 +12,6 @@ repositories {
 def xspecVersion = '3.4.3'
 def saxonVersion = '12.9'
 def resolverVersion = "5.3.3"
-def xspecCatalog = "${projectDir.toURI()}catalog/catalog.xml"
 
 configurations {
   xspec
@@ -25,8 +24,31 @@ dependencies {
   schxslt "name.dmaus.schxslt:ant:1.6.2"
 }
 
-defaultTasks "testXSpec"
+defaultTasks "xspec_test"
 
+// ============================================================
+// XML Catalog
+// ============================================================
+// There are different ways to specify that XML Catalogs should
+// be used and where they are located.
+
+def xmlCatalog = "${projectDir.toURI()}catalog/catalog.xml" // XML Catalog for XSpec
+
+// System.setProperty("javax.xml.useCatalog","true") // XML Catalog for Java versions 11+
+// System.setProperty("javax.xml.catalog.resolve", "continue") // XML Catalog for Java versions 11+
+// System.setProperty("javax.xml.catalog.files", xmlCatalog) // XML Catalog for Java versions 11+
+// System.setProperty("xml.catalog.files", xmlCatalog) // XML Catalog for XML Resolvers from Xerces and xmlresolver.org
+// System.setProperty("org.basex.catalog", xmlCatalog) // XML Catalog for BaseX
+
+// ============================================================
+// End XML Catalog section
+// ============================================================
+
+
+// ============================================================
+// Schematron and XSD validation
+// ============================================================
+// This section contains example tasks for validating XML files using an XML Schema or a Schematron schema.
 
 // Validate an XML using an XML Schema
 task validateXsd {
@@ -49,63 +71,82 @@ task validateSch {
   }
 }
 
+// ============================================================
+// End Schematron and XSD validation section
+// ============================================================
+
 
 // ============================================================
 // XSpec
 // ============================================================
+// Template from https://gitlab.com/xspec/xspec-gradle-template
 // inspired by https://github.com/ndw/xsltexplorer
-// Detect and run XSpec test scenarios as part of tasks "test" and "testXSpec"
+// Detect and run XSpec test scenarios as part of tasks "test" and "xspec_test"
 // Detection is based on file name ending with .xspec
 // File name ending with sch.xspec will be run as XSpec Schematron test
 // File name ending with xq.xspec will be run as XSpec XQuery test
 // Otherwise, file name ending with .xspec will be run as XSpec XSLT test
-// The cleanup task "cleanXSpec" deletes files that are created by XSpec.
+// The cleanup task "xspec_clean" deletes files that are created by XSpec.
 
-task testXSpec {}
+// Folder containing XSpec test scenarios. 
+// The "xspec_test" task will look for .xspec files in this folder and its subfolders. 
+// The "xspec_clean" task will delete files created by XSpec in this folder and its subfolders.
+// def xspec_tests_dir = "${projectDir}/src"
+def xspec_tests_dir = "${projectDir}"
 
-test.dependsOn "testXSpec"
-clean.dependsOn "cleanXSpec"
-testXSpec.dependsOn "cleanXSpec"
+// collect failures across all xspec tests
+def xspec_failures = []
 
-// download a specific version of XSpec
-task downloadXSpec(type: Download) {
-  src "https://github.com/xspec/xspec/archive/v${xspecVersion}.zip"
-  dest file("${buildDir}/xspec-${xspecVersion}.zip")
-  doFirst {
-    mkdir(buildDir)
-  }
-  onlyIf {
-    !file("${buildDir}/xspec-${xspecVersion}.zip").exists()
+task xspec_test {
+  description = "Run XSpec for all .xspec files"
+  group = "${project.name} XSpec"
+  doLast {
+    if (!xspec_failures.isEmpty()) {
+      def count = xspec_failures.size()
+      def list = xspec_failures.collect { "  - ${it}" }.join("\n")
+      throw new GradleException("${count} XSpec test(s) failed:\n${list}")
+    }
   }
 }
 
+test.dependsOn "xspec_test"
+clean.dependsOn "xspec_clean"
+xspec_test.dependsOn "xspec_clean"
+
+// download a specific version of XSpec
+task xspec_download (type: Download) {
+  src "https://github.com/xspec/xspec/archive/v${xspecVersion}.zip"
+  dest file("${buildDir}/xspec/xspec-${xspecVersion}.zip")
+  overwrite false
+}
+
 // unpack the XSpec distribution after downloading
-task setupXSpec(type: Copy, dependsOn: ['downloadXSpec']) {
-  def zipFile = file("${buildDir}/xspec-${xspecVersion}.zip")
-  def outputDir = buildDir
+task xspec_setup (type: Copy, dependsOn: ['xspec_download']) {
+  def zipFile = file("${buildDir}/xspec/xspec-${xspecVersion}.zip")
+  def outputDir = "${buildDir}/xspec"
   from zipTree(zipFile)
   into outputDir
-  onlyIf {
-    !file("${buildDir}/xspec-${xspecVersion}/README.md").exists()
+  outputs.upToDateWhen {
+    file("${buildDir}/xspec/xspec-${xspecVersion}/README.md").exists()
   }
 }
 
 // create a file path to the XSpec command
-def xspecCmd = (OperatingSystem.current().isWindows()) ? 
-  "${buildDir}\\xspec-${xspecVersion}\\bin\\xspec.bat" : 
-  "${buildDir}/xspec-${xspecVersion}/bin/xspec.sh"
+def xspec_cmd = (OperatingSystem.current().isWindows()) ? 
+  "${buildDir}\\xspec\\xspec-${xspecVersion}\\bin\\xspec.bat" : 
+  "${buildDir}/xspec/xspec-${xspecVersion}/bin/xspec.sh"
 
 // export the Gradle project's runtime classpath so that XSpec can use the same classpath
-def EXCP=""
+def xspec_cp = ""
 configurations.xspec.each { it ->
-  EXCP += ("".equals(EXCP)) ? it : (OperatingSystem.current().isWindows()) ? ";" + it : ":" + it
+  xspec_cp += ("".equals(xspec_cp)) ? it : (OperatingSystem.current().isWindows()) ? ";" + it : ":" + it
 }
 
 // configure environment variables for XSPec
-task configureEnvironment() {
+task xspec_configure_environment() {
   def envVars = [:]
-  envVars['SAXON_CP'] = EXCP
-  envVars['XML_CATALOG'] = xspecCatalog
+  envVars['SAXON_CP'] = xspec_cp
+  envVars['XML_CATALOG'] = xmlCatalog
   // envVars['TEST_DIR'] = buildDir
   tasks.withType(Exec) {
     environment << envVars
@@ -113,26 +154,43 @@ task configureEnvironment() {
   // doLast { println envVars }
 }
 
+
+// clean by removing files generated by xspec
+task xspec_clean (type: Delete) {
+    description = "Delete XSpec temporary and result files"
+    group = "${project.name} XSpec"
+    delete fileTree(
+        dir: xspec_tests_dir, 
+        include: [
+          "**/xspec/*",
+          "**/*-junit.xml",
+          "**/*-result.html",
+          "**/*-result.xml"
+        ],
+        exclude: [buildDir.getName(), "vendor/"]
+    )
+}
+
 // find .xspec files and dynamically generate tasks
 fileTree(
-  dir: projectDir, 
-  include: ["**/*.xspec"], 
-  exclude: [buildDir.getName()]
-).each { xspec -> 
+  dir: xspec_tests_dir,
+  include: ["**/*.xspec"],
+  exclude: [buildDir.getName(), "vendor/"]
+).each { xspec ->
   def base = xspec.toString().replace("\\", "/")
-  def pos = projectDir.toString().length()
+  def pos = xspec_tests_dir.toString().length()
   if (pos > 0) {
     base = base.substring(pos + 1)
   }
   def taskname = base.replaceAll('[/\\\\:<>"?*|]', "_")
-  def xspecType = (base.matches('.+sch\\.xspec')) ? '-s' : (base.matches('.+xq\\.xspec')) ? '-q' : '-t'
+  def xspec_type = (base.matches('.+sch\\.xspec')) ? '-s' : (base.matches('.+xq\\.xspec')) ? '-q' : '-t'
   // first task runs XSpec using the .xspec file
   Task t1 = task "${taskname}_run" (type: Exec) {
-    doFirst { println "xspec ${xspecType} ${base}" }
-    dependsOn "setupXSpec", "configureEnvironment"
+    doFirst { println "xspec ${xspec_type} ${base}" }
+    dependsOn "xspec_setup", "xspec_configure_environment"
     errorOutput = new ByteArrayOutputStream()
     ignoreExitValue = true
-    commandLine xspecCmd, xspecType, xspec.toString()
+    commandLine xspec_cmd, "-j", xspec_type, xspec.toString()
     ext.output = {
       return errorOutput.toString()
     }
@@ -143,6 +201,8 @@ fileTree(
   // second task examines the output of the first task
   Task t2 = task "${taskname}" {
     dependsOn "${taskname}_run"
+    description = "Run XSpec ${base}"
+    group = "${project.name} XSpec"
     doLast {
       Task t = tasks.findByName("${taskname}_run")
       def fail = false
@@ -150,26 +210,38 @@ fileTree(
         fail = fail || line.trim().equals("FAILED") || line.startsWith("*** Error") || line.startsWith("*** Found")
       }
       if (fail) {
-        throw new GradleException("XSpec did not pass ${base}")
+        // If XSpec aborted before writing a JUnit report (e.g. a run-time error in the
+        // stylesheet under test), generate a synthetic one so that dorny/test-reporter
+        // can surface the failure in the CI summary rather than silently ignoring it.
+        def junitFile = file("${xspec.parent}/xspec/${xspec.name.replace('.xspec', '')}-junit.xml")
+        if (!junitFile.exists()) {
+          junitFile.parentFile.mkdirs()
+          def errorText = t.output()
+            .replace('&', '&amp;').replace('<', '&lt;').replace('>', '&gt;').replace('"', '&quot;')
+          junitFile.text = """\
+<?xml version="1.0" encoding="UTF-8"?>
+<testsuites>
+  <testsuite name="${base}" tests="1" failures="0" errors="1" skipped="0" time="0">
+    <testcase name="${base}" classname="${xspec.name}">
+      <error message="XSpec test suite failed to run">${errorText}</error>
+    </testcase>
+  </testsuite>
+</testsuites>"""
+        }
+        if (gradle.taskGraph.hasTask(tasks.findByName("xspec_test"))) {
+          xspec_failures << base
+          println "FAILED: ${base}"
+        } else {
+          throw new GradleException("XSpec did not pass ${base}")
+        }
       }
     }
   }
-  // append the new task to run based on task testXSpec
-  Task t3 = tasks.findByName("testXSpec")
+  // append the new task to run based on task xspec_test
+  Task t3 = tasks.findByName("xspec_test")
   t3.dependsOn "${taskname}"
 }
 
-task cleanXSpec(type: Delete) {
-    delete fileTree(
-        dir: projectDir, 
-        include: [
-          "**/xspec/*",
-          "**/*-result.html",
-          "**/*-result.xml"
-        ]
-    )
-}
-
 // ============================================================
-// End XSpec
+// End XSpec section
 // ============================================================
