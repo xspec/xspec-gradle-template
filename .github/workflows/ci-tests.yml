@@ -1,0 +1,61 @@
+name: CI Tests
+
+# trigger on push to any branch, pull request, and manual workflow dispatch
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+    group: ${{ github.workflow }}-${{ github.sha }}
+    cancel-in-progress: true
+
+jobs:
+    ci-tests:
+        runs-on: ubuntu-latest
+        permissions:
+            checks: write
+            contents: read
+        steps:
+
+        - name: Git checkout
+          uses: actions/checkout@v4
+
+        - name: Set up JDK 21
+          uses: actions/setup-java@v4
+          with:
+            java-version: '21'
+            distribution: 'corretto'
+
+        - name: Set up Gradle
+          uses: gradle/actions/setup-gradle@v3
+
+        - name: Run XSpec tests
+          id: xspec-tests
+          if: "!cancelled()"
+          run: |
+            ./gradlew xspec_test
+
+        - name: Upload XSpec test reports
+          if: steps.xspec-tests.outcome != 'skipped' && !cancelled()
+          uses: actions/upload-artifact@v4
+          with:
+            name: xspec-test-reports
+            path: |
+              src/**/xspec/*-junit.xml
+              src/**/xspec/*-result.html
+              src/**/xspec/*-result.xml
+
+        - name: Report XSpec test results
+          id: report-xspec
+          if: steps.xspec-tests.outcome != 'skipped' && !cancelled()
+          uses: dorny/test-reporter@v2
+          continue-on-error: true
+          with:
+            name: XSpec Tests
+            report-title: XSpec Tests
+            path: src/**/xspec/*-junit.xml
+            reporter: java-junit
+            fail-on-error: true
+            fail-on-empty: false
