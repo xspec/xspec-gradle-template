@@ -174,7 +174,7 @@ task xspec_clean (type: Delete) {
 fileTree(
   dir: xspec_tests_dir,
   include: ["**/*.xspec"],
-  exclude: [buildDir.getName(), "vendor/"]
+  exclude: [buildDir.getName(), "**/xspec/*", "vendor/"]
 ).each { xspec ->
   def base = xspec.toString().replace("\\", "/")
   def pos = xspec_tests_dir.toString().length()
