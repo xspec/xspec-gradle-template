@@ -63,6 +63,10 @@ If you want to run individual XSpec files using Gradle (instead of running all X
 
     gradlew examples_xslt_test.xspec
 
+The build script will automatically download and run the version of XSpec that is specified in `xspecVersion` in `build.gradle`. If desired, a different local copy of XSpec can be used instead by providing the file path to the XSpec command as a parameter to Gradle:
+
+    gradlew -PxspecCmd=/path/to/xspec/bin/xspec.sh
+
 ### Step 3: GitHub Actions or GitLab CI
 
 For GitHub Actions, copy the `.github\workflows\ci-tests.yml` script file or copy the relevant parts of this file into a similar GitHub Actions script for your project.
