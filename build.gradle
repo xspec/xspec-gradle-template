@@ -131,7 +131,14 @@ task xspec_setup (type: Copy, dependsOn: ['xspec_download']) {
 }
 
 // create a file path to the XSpec command
-def xspec_cmd = (OperatingSystem.current().isWindows()) ? 
+// If desired, a specific copy of XSpec can be used 
+// by providing the file path to the XSpec command 
+// as a parameter when running Gradle.
+// usage: gradlew -PxspecCmd=/path/to/xspec/bin/xspec.sh
+def xspec_cmd = 
+  project.hasProperty('xspecCmd') ?
+  project.property('xspecCmd') :
+  (OperatingSystem.current().isWindows()) ? 
   "${buildDir}\\xspec\\xspec-${xspecVersion}\\bin\\xspec.bat" : 
   "${buildDir}/xspec/xspec-${xspecVersion}/bin/xspec.sh"
 
