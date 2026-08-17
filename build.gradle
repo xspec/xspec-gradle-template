@@ -9,7 +9,7 @@ repositories {
   mavenCentral()
 }
 
-def xspecVersion = '3.4.3'
+def xspecVersion = '4.0.3'
 def saxonVersion = '12.9'
 def resolverVersion = "5.3.3"
 
@@ -112,18 +112,22 @@ test.dependsOn "xspec_test"
 clean.dependsOn "xspec_clean"
 xspec_test.dependsOn "xspec_clean"
 
+def xspec_download_zip = file("${buildDir}/xspec/xspec-${xspecVersion}.zip")
+
 // download a specific version of XSpec
 task xspec_download (type: Download) {
   src "https://github.com/xspec/xspec/archive/v${xspecVersion}.zip"
-  dest file("${buildDir}/xspec/xspec-${xspecVersion}.zip")
+  dest xspec_download_zip
   overwrite false
+  outputs.upToDateWhen {
+    xspec_download_zip.exists()
+  }
 }
 
 // unpack the XSpec distribution after downloading
 task xspec_setup (type: Copy, dependsOn: ['xspec_download']) {
-  def zipFile = file("${buildDir}/xspec/xspec-${xspecVersion}.zip")
   def outputDir = "${buildDir}/xspec"
-  from zipTree(zipFile)
+  from zipTree(xspec_download_zip)
   into outputDir
   outputs.upToDateWhen {
     file("${buildDir}/xspec/xspec-${xspecVersion}/README.md").exists()

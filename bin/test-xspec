@@ -1,0 +1,7 @@
+#!/bin/bash
+pushd "$(dirname "$0")/.." > /dev/null
+export GRADLE_OPTS=-Xmx5048m
+./gradlew xspec_clean xspec_test
+exit_code=$?
+popd > /dev/null
+exit $exit_code
