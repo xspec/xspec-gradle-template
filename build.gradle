@@ -9,7 +9,7 @@ repositories {
   mavenCentral()
 }
 
-def xspecVersion = '3.4.3'
+def xspecVersion = '4.0.3'
 def saxonVersion = '12.9'
 def resolverVersion = "5.3.3"
 
