@@ -55,6 +55,16 @@ On Linux:
 
     ./gradlew xspec_test
 
+The convenience scripts in the `bin` folder can also be used to run all XSpec tests.
+
+On Windows, at the command line run:
+
+    .\bin\test-xspec
+
+On Linux:
+
+    ./bin/test-xspec
+
 If either "test" or "xspec_test" are included in the `defaultTasks` setting of your `build.gradle` file you can just click on `gradlew.bat` or `gradlew` to run the XSpec tests.
 
 XSpec will save its test reports in folders named `xspec` with files named `*-result.html` and `*-junit.xml` based on the location and file name of the XSpec file.
